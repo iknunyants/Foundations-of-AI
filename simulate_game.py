@@ -36,7 +36,7 @@ def check_oracle(solve_sudoku_path: str) -> None:
 
 def simulate_game(initial_board: SudokuBoard, player1: SudokuAI, player2: SudokuAI, solve_sudoku_path: str, calculation_time: float = 0.5) -> None:
     """
-    Simulates a game between two instances of SudokuAI, starting in initial_board. The first move is played by player1
+    Simulates a game between two instances of SudokuAI, starting in initial_board. The first move is played by player1.
     @param initial_board: The initial position of the game.
     @param player1: The AI of the first player.
     @param player2: The AI of the second player.
