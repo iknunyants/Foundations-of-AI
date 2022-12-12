@@ -98,6 +98,42 @@ def minimax(depth, board, is_max, taboo, score1=0, score2=0):
         return value
 
 
+def minimax_alphabeta(depth, board, is_max, taboo, alpha, beta, score1=0, score2=0):
+    if check_finish(board) or depth == 0:
+        return score1 - score2
+    available_list = []
+    for i in range(board.m * board.n):
+        for j in range(board.m * board.n):
+            for v in range(1, board.m * board.n + 1):
+                if check_valid(i, j, v, board):
+                    available_list.append((i, j, v))
+    available_list = list(set(available_list) - set(taboo))
+    if is_max:
+        value = -100000
+        for i in available_list:
+            newboard = copy.deepcopy(board)
+            newboard.put(i[0], i[1], i[2])
+            score = calculate_score(i[0], i[1], newboard)
+            value = max(value, minimax_alphabeta(depth - 1, newboard,
+                        False, taboo, alpha, beta, score1 + score, score2))
+            if value >= beta:
+                break
+            alpha = max(alpha, value)
+        return value
+    else:
+        value = 100000
+        for i in available_list:
+            newboard = copy.deepcopy(board)
+            newboard.put(i[0], i[1], i[2])
+            score = calculate_score(i[0], i[1], newboard)
+            value = min(value, minimax_alphabeta(depth - 1, newboard,
+                        True, taboo, alpha, beta, score1, score2 + score))
+            if value <= alpha:
+                break
+            beta = min(beta, value)
+        return value
+
+
 class SudokuAI(competitive_sudoku.sudokuai.SudokuAI):
     """
     Sudoku AI that computes a move for a given sudoku configuration.
@@ -116,20 +152,24 @@ class SudokuAI(competitive_sudoku.sudokuai.SudokuAI):
                 for v in range(1, board.m * board.n + 1):
                     if check_valid(i, j, v, board):
                         satisfy.append((i, j, v))
-        max_score = -1000
         taboo = [(taboo_move.i, taboo_move.j, taboo_move.value)
                  for taboo_move in game_state.taboo_moves]
-        for i in range(len(satisfy)):
-            if (satisfy[i][0], satisfy[i][1], satisfy[i][2]) in taboo:
-                continue
-            depth = 2
-            newboard = copy.deepcopy(board)
-            newboard.put(satisfy[i][0], satisfy[i][1], satisfy[i][2])
-            score = calculate_score(satisfy[i][0], satisfy[i][1], newboard)
-            current_score = minimax(
-                depth - 1, newboard, False, taboo, score, 0)
-            if max_score < current_score:
-                max_score = current_score
-                current_max = [satisfy[i][0], satisfy[i][1], satisfy[i][2]]
-                self.propose_move(
-                    Move(current_max[0], current_max[1], current_max[2]))
+        max_score = -1000
+        depth = 2
+        while True:
+            for i in range(len(satisfy)):
+                if (satisfy[i][0], satisfy[i][1], satisfy[i][2]) in taboo:
+                    continue
+                newboard = copy.deepcopy(board)
+                newboard.put(satisfy[i][0], satisfy[i][1], satisfy[i][2])
+                score = calculate_score(satisfy[i][0], satisfy[i][1], newboard)
+                # current_score = minimax(
+                #     depth - 1, newboard, False, taboo, score, 0)
+                current_score = minimax_alphabeta(
+                    depth - 1, newboard, False, taboo, -10000, 10000, score, 0)
+                if max_score < current_score:
+                    max_score = current_score
+                    current_max = [satisfy[i][0], satisfy[i][1], satisfy[i][2]]
+                    self.propose_move(
+                        Move(current_max[0], current_max[1], current_max[2]))
+            depth += 1
