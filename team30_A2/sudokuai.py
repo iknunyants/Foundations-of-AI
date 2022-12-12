@@ -3,19 +3,10 @@
 #  https://www.gnu.org/licenses/gpl-3.0.txt)
 
 import copy
+import time
 import numpy as np
 from competitive_sudoku.sudoku import GameState, Move, SudokuBoard, TabooMove
 import competitive_sudoku.sudokuai
-
-
-def check_finish(board):
-    # checks if there is any empty cell
-    rows_block = board.m
-    cols_block = board.n
-    board_size = rows_block * cols_block
-    board = np.array(board.squares).reshape(
-        (board.n * board.m, board.n * board.m))
-    return 0 not in board
 
 
 def calculate_score(i, j, board):
@@ -24,18 +15,61 @@ def calculate_score(i, j, board):
     rows_block = board.m
     cols_block = board.n
     board_size = rows_block * cols_block
-    board = np.array(board.squares).reshape(
+    board_2d = np.array(board.squares).reshape(
         (board.n * board.m, board.n * board.m))
     count = 0
-    count += (0 not in board[i, :]) #checking the corresponding row
-    count += (0 not in board[:, j]) #checking the corresponding column
-    block = board[i // rows_block * rows_block:(i // rows_block + 1) * rows_block, j // cols_block * cols_block:(j // cols_block + 1)
+    count += (0 not in board_2d[i, :]) #checking the corresponding row
+    count += (0 not in board_2d[:, j]) #checking the corresponding column
+    block = board_2d[i // rows_block * rows_block:(i // rows_block + 1) * rows_block, j // cols_block * cols_block:(j // cols_block + 1)
                              * cols_block] #checking the corresponding block
     count += (0 not in block)
     return score[count]
 
 
-def find_available_moves(board):
+# def find_available_moves(board, taboolist):
+#     # find the available moves for the board
+#     rows_block = board.m
+#     cols_block = board.n
+#     board_size = rows_block * cols_block
+#     board_2d = np.array(board.squares).reshape(
+#         (board.n * board.m, board.n * board.m))
+    
+#     #creating the sets of possible values for rows, columns and blocks
+#     rows = [set(row) - {0} for row in board_2d]
+#     columns = [set(col) - {0} for col in board_2d.T]
+#     blocks = [[set(board_2d[i * rows_block:(i + 1) * rows_block, j * cols_block:(j + 1)
+#                             * cols_block].reshape(-1)) - {0} for j in range(rows_block)] for i in range(cols_block)]
+
+#     # finding the possible values for the empty sells by using sets 
+#     all_values = {i + 1 for i in range(board_size)}
+
+#     result = np.where(board_2d == 0)
+#     empty_cells = list(zip(result[0], result[1]))
+
+#     one_value = []
+#     for (i, j) in empty_cells:
+#         vals = list(all_values.difference(rows[i].union(columns[j]).union(
+#             blocks[i // rows_block][j // cols_block])))
+#         # moves.append((i, j, vals)) can be sets of possible values for the cell
+#         if len(vals) == 1:
+#             one_value.append((i, j, vals[0]))
+#     if len(one_value) != 0:
+#         for move in one_value:
+#             board.put(*move)
+#         return one_value + find_available_moves(board, taboolist)
+#     else:
+#         moves = []
+#         for (i, j) in empty_cells:
+#             vals = list(all_values.difference(rows[i].union(columns[j]).union(
+#                 blocks[i // rows_block][j // cols_block])))
+#             # moves.append((i, j, vals)) can be sets of possible values for the cell
+#             for val in vals:
+#                 if (i, j, val) not in taboolist:
+#                     moves.append((i, j, val))
+#         return moves
+    
+
+def find_available_moves(board, taboolist):
     # find the available moves for the board
     rows_block = board.m
     cols_block = board.n
@@ -52,22 +86,21 @@ def find_available_moves(board):
     # finding the possible values for the empty sells by using sets 
     all_values = {i + 1 for i in range(board_size)}
     moves = []
-    for i in range(board_size):
-        for j in range(board_size):
-            if board[i, j] == 0:
-                vals = all_values.difference(lines[i].union(rows[j]).union(
-                    blocks[i // rows_block][j // cols_block]))
-                # moves.append((i, j, vals)) can be sets of possible values for the cell
-                for val in vals:
-                    moves.append((i, j, val))
+    result = np.where(board == 0)
+    empty_cells = list(zip(result[0], result[1]))
+    for (i, j) in empty_cells:
+        vals = all_values.difference(lines[i].union(rows[j]).union(
+            blocks[i // rows_block][j // cols_block]))
+        for val in vals:
+            if (i, j, val) not in taboolist:
+                moves.append((i, j, val))
     return moves
 
 
 def minimax_alphabeta(depth, board, is_max, taboo, alpha, beta, score1=0, score2=0):
-    if check_finish(board) or depth == 0:
+    if 0 not in board.squares or depth == 0:
         return score1 - score2
-    available_list = find_available_moves(board)
-    available_list = list(set(available_list) - set(taboo))
+    available_list = find_available_moves(board, taboo)
     if is_max:
         value = -100000
         for i in available_list:
@@ -105,16 +138,14 @@ class SudokuAI(competitive_sudoku.sudokuai.SudokuAI):
 
     # Uses solve_sudoku to compute a random move.
     def compute_best_move(self, game_state: GameState) -> None:
-        board = copy.copy(game_state.board)
-        satisfy = find_available_moves(board)
+        board = copy.deepcopy(game_state.board)
         taboo = [(taboo_move.i, taboo_move.j, taboo_move.value)
                  for taboo_move in game_state.taboo_moves]
+        satisfy = find_available_moves(board, taboo)
         max_score = -1000
         depth = 2
         while True:
             for i in range(len(satisfy)):
-                if (satisfy[i][0], satisfy[i][1], satisfy[i][2]) in taboo:
-                    continue
                 newboard = copy.deepcopy(board)
                 newboard.put(satisfy[i][0], satisfy[i][1], satisfy[i][2])
                 score = calculate_score(satisfy[i][0], satisfy[i][1], newboard)
