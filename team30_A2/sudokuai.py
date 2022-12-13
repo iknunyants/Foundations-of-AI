@@ -18,12 +18,55 @@ def calculate_score(i, j, board):
     board_2d = np.array(board.squares).reshape(
         (board.n * board.m, board.n * board.m))
     count = 0
-    count += (0 not in board_2d[i, :]) #checking the corresponding row
-    count += (0 not in board_2d[:, j]) #checking the corresponding column
+    count += (0 not in board_2d[i, :])  # checking the corresponding row
+    count += (0 not in board_2d[:, j])  # checking the corresponding column
     block = board_2d[i // rows_block * rows_block:(i // rows_block + 1) * rows_block, j // cols_block * cols_block:(j // cols_block + 1)
-                             * cols_block] #checking the corresponding block
+                     * cols_block]  # checking the corresponding block
     count += (0 not in block)
     return score[count]
+
+
+def find_available_moves(board, taboolist):
+    # find the available moves for the board
+    rows_block = board.m
+    cols_block = board.n
+    board_size = rows_block * cols_block
+    board_2d = np.array(board.squares).reshape(
+        (board.n * board.m, board.n * board.m))
+
+    # creating the sets of possible values for rows, columns and blocks
+    rows = [set(row) - {0} for row in board_2d]
+    columns = [set(col) - {0} for col in board_2d.T]
+    blocks = [[set(board_2d[i * rows_block:(i + 1) * rows_block, j * cols_block:(j + 1)
+                            * cols_block].reshape(-1)) - {0} for j in range(rows_block)] for i in range(cols_block)]
+
+    # finding the possible values for the empty sells by using sets
+    all_values = {i + 1 for i in range(board_size)}
+
+    result = np.where(board_2d == 0)
+    empty_cells = list(zip(result[0], result[1]))
+
+    one_value = []
+    for (i, j) in empty_cells:
+        vals = list(all_values.difference(rows[i].union(columns[j]).union(
+            blocks[i // rows_block][j // cols_block])))
+        # moves.append((i, j, vals)) can be sets of possible values for the cell
+        if len(vals) == 1:
+            one_value.append((i, j, vals[0]))
+    if len(one_value) != 0:
+        newboard = copy.deepcopy(board)
+        for move in one_value:
+            newboard.put(*move)
+        return one_value + find_available_moves(newboard, taboolist)
+    moves = []
+    for (i, j) in empty_cells:
+        vals = list(all_values.difference(rows[i].union(columns[j]).union(
+            blocks[i // rows_block][j // cols_block])))
+        # moves.append((i, j, vals)) can be sets of possible values for the cell
+        for val in vals:
+            if (i, j, val) not in taboolist:
+                moves.append((i, j, val))
+    return moves
 
 
 # def find_available_moves(board, taboolist):
@@ -31,59 +74,44 @@ def calculate_score(i, j, board):
 #     rows_block = board.m
 #     cols_block = board.n
 #     board_size = rows_block * cols_block
-#     board_2d = np.array(board.squares).reshape(
+#     board = np.array(board.squares).reshape(
 #         (board.n * board.m, board.n * board.m))
-    
+
 #     #creating the sets of possible values for rows, columns and blocks
-#     rows = [set(row) - {0} for row in board_2d]
-#     columns = [set(col) - {0} for col in board_2d.T]
-#     blocks = [[set(board_2d[i * rows_block:(i + 1) * rows_block, j * cols_block:(j + 1)
+#     lines = [set(line) - {0} for line in board]
+#     rows = [set(row) - {0} for row in board.T]
+#     blocks = [[set(board[i * rows_block:(i + 1) * rows_block, j * cols_block:(j + 1)
 #                             * cols_block].reshape(-1)) - {0} for j in range(rows_block)] for i in range(cols_block)]
 
-#     # finding the possible values for the empty sells by using sets 
+#     # finding the possible values for the empty sells by using sets
 #     all_values = {i + 1 for i in range(board_size)}
-
-#     result = np.where(board_2d == 0)
+#     moves = []
+#     result = np.where(board == 0)
 #     empty_cells = list(zip(result[0], result[1]))
-
-#     one_value = []
 #     for (i, j) in empty_cells:
-#         vals = list(all_values.difference(rows[i].union(columns[j]).union(
-#             blocks[i // rows_block][j // cols_block])))
-#         # moves.append((i, j, vals)) can be sets of possible values for the cell
-#         if len(vals) == 1:
-#             one_value.append((i, j, vals[0]))
-#     if len(one_value) != 0:
-#         for move in one_value:
-#             board.put(*move)
-#         return one_value + find_available_moves(board, taboolist)
-#     else:
-#         moves = []
-#         for (i, j) in empty_cells:
-#             vals = list(all_values.difference(rows[i].union(columns[j]).union(
-#                 blocks[i // rows_block][j // cols_block])))
-#             # moves.append((i, j, vals)) can be sets of possible values for the cell
-#             for val in vals:
-#                 if (i, j, val) not in taboolist:
-#                     moves.append((i, j, val))
-#         return moves
-    
+#         vals = all_values.difference(lines[i].union(rows[j]).union(
+#             blocks[i // rows_block][j // cols_block]))
+#         for val in vals:
+#             if (i, j, val) not in taboolist:
+#                 moves.append((i, j, val))
+#     return moves
 
-def find_available_moves(board, taboolist):
+
+def all_moves(board, taboolist):
     # find the available moves for the board
     rows_block = board.m
     cols_block = board.n
     board_size = rows_block * cols_block
     board = np.array(board.squares).reshape(
         (board.n * board.m, board.n * board.m))
-    
-    #creating the sets of possible values for rows, columns and blocks
+
+    # creating the sets of possible values for rows, columns and blocks
     lines = [set(line) - {0} for line in board]
     rows = [set(row) - {0} for row in board.T]
     blocks = [[set(board[i * rows_block:(i + 1) * rows_block, j * cols_block:(j + 1)
-                            * cols_block].reshape(-1)) - {0} for j in range(rows_block)] for i in range(cols_block)]
+                         * cols_block].reshape(-1)) - {0} for j in range(rows_block)] for i in range(cols_block)]
 
-    # finding the possible values for the empty sells by using sets 
+    # finding the possible values for the empty sells by using sets
     all_values = {i + 1 for i in range(board_size)}
     moves = []
     result = np.where(board == 0)
@@ -98,8 +126,10 @@ def find_available_moves(board, taboolist):
 
 
 def minimax_alphabeta(depth, board, is_max, taboo, alpha, beta, score1=0, score2=0):
-    if 0 not in board.squares or depth == 0:
+    if depth == 0:
         return score1 - score2
+    if 0 not in board.squares:
+        return (score1 - score2) * 100
     available_list = find_available_moves(board, taboo)
     if is_max:
         value = -100000
@@ -142,18 +172,37 @@ class SudokuAI(competitive_sudoku.sudokuai.SudokuAI):
         taboo = [(taboo_move.i, taboo_move.j, taboo_move.value)
                  for taboo_move in game_state.taboo_moves]
         satisfy = find_available_moves(board, taboo)
+        fake_moves = set(all_moves(board, taboo)).difference(set(satisfy))
+        empty_cells = board.squares.count(0)
         max_score = -1000
         depth = 2
-        while True:
-            for i in range(len(satisfy)):
+        best_move_depth = 2
+
+        while depth == 2 or depth <= empty_cells:
+            fake_move_made = False
+            if fake_moves:
+                current_score = minimax_alphabeta(
+                    depth - 1, board, False, taboo, -10000, 10000, 0, 0)
+                if max_score < current_score or (best_move_depth < depth and max_score == current_score):
+                    best_move_depth = depth
+                    max_score = current_score
+                    fake_move = next(iter(fake_moves))
+                    fake_move_made = True
+
+                    self.propose_move(
+                        Move(fake_move[0], fake_move[1], fake_move[2]))
+
+            for move in satisfy:
                 newboard = copy.deepcopy(board)
-                newboard.put(satisfy[i][0], satisfy[i][1], satisfy[i][2])
-                score = calculate_score(satisfy[i][0], satisfy[i][1], newboard)
+                newboard.put(*move)
+                score = calculate_score(move[0], move[1], newboard)
                 current_score = minimax_alphabeta(
                     depth - 1, newboard, False, taboo, -10000, 10000, score, 0)
-                if max_score < current_score:
+                if max_score < current_score or ((best_move_depth < depth or (fake_move_made and not empty_cells % 2 == 0)) and max_score == current_score):
+                    fake_move_made = False
+                    best_move_depth = depth
                     max_score = current_score
-                    current_max = [satisfy[i][0], satisfy[i][1], satisfy[i][2]]
-                    self.propose_move(
-                        Move(current_max[0], current_max[1], current_max[2]))
+
+                    self.propose_move(Move(*move))
+
             depth += 1

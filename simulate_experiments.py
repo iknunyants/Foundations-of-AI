@@ -180,6 +180,7 @@ def run_experiment(first_player_name, second_player_name, time_param, board_name
 
     stats = [0, 0, 0]
     for i in tqdm(range(run_experiment_times)):
+    # for i in range(run_experiment_times):
         if i < (run_experiment_times // 2): 
             stats[run_game(first_player_name, second_player_name,
                         time_param, board_name, print_games)] += 1
@@ -192,7 +193,11 @@ def run_experiment(first_player_name, second_player_name, time_param, board_name
                 stats[0] += 1
             else:
                 stats[2] += 1
-    print('against_player', second_player_name, 'time:',
+        print(first_player_name, 'against_player', second_player_name, 'time:',
+          time_param, 'board_name:', board_name)
+        print('wins:', stats[0] / (i + 1), 'losses:', stats[1] /
+        (i + 1), 'draws:', stats[2] / (i + 1))
+    print(first_player_name, 'against_player', second_player_name, 'time:',
           time_param, 'board_name:', board_name, file=out_file)
     print('wins:', stats[0] / run_experiment_times, 'losses:', stats[1] /
           run_experiment_times, 'draws:', stats[2] / run_experiment_times, file=out_file)
@@ -205,17 +210,21 @@ if __name__ == '__main__':
     f = open("output.txt", "w")
 
 
-    first_player_name = 'team30_A1'
+    # first_player_name = 'team30_A1'
+    first_player_name = 'team30_A2'
 
-    second_players = ['greedy_player', 'random_player']
+    # second_players = ['greedy_player', 'random_player']
+    second_players  = ['greedy_player']
 
-    times = [0.1, 0.5, 1.0, 5.0]
+    # times = [0.1, 0.5, 1.0, 5.0]
+    times = [0.5]
 
     board_names = ['boards/empty-3x3.txt', 'boards/hard-3x3.txt']
+    board_names = ['boards/easy-3x3.txt']
 
     print_games = False
 
-    run_experiment_times = 6
+    run_experiment_times = 10
 
     for second_player_name in second_players:
         for time_param in times:
