@@ -102,10 +102,10 @@ def all_moves(board, taboolist):
 
 def minimax_alphabeta(depth, board, is_max, taboo, alpha, beta, score1=0, score2=0):
     # minimax alpha-beta recursion algorithm 
-    if depth == 0:
-        return score1 - score2
     if 0 not in board.squares:
         return (score1 - score2) * 100
+    if depth == 0:
+        return score1 - score2
     available_list = find_available_moves(board, taboo)
     if is_max:
         value = -100000
@@ -161,9 +161,9 @@ class SudokuAI(competitive_sudoku.sudokuai.SudokuAI):
         self.propose_move(
                         Move(satisfy[0][0], satisfy[0][1], satisfy[0][2]))
 
-        # iteratively increasing the depth until the algorithm reaches the end of the game depth
+        # iteratively increasing the depth until the algorithm reaches the end of the game depth (+1 is added in case if we make a fake move)
         # depth == 2 is for case when there's only one empty cell 
-        while depth == 2 or depth <= empty_cells:
+        while depth == 2 or depth <= empty_cells + 1:
 
             # if possible, calculate the value of passing the first move
             fake_move_made = False
