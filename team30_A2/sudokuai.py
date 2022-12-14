@@ -27,7 +27,7 @@ def calculate_score(i, j, board):
 
 
 def find_available_moves(board, taboolist):
-    # find the available moves for the board
+    # find the available moves for the board using sinlge possibility rule recursion
     rows_block = board.m
     cols_block = board.n
     board_size = rows_block * cols_block
@@ -46,59 +46,34 @@ def find_available_moves(board, taboolist):
     result = np.where(board_2d == 0)
     empty_cells = list(zip(result[0], result[1]))
 
+    # collecting all the moves when there's only one possible value for a cell (one_value)
     one_value = []
     for (i, j) in empty_cells:
         vals = list(all_values.difference(rows[i].union(columns[j]).union(
             blocks[i // rows_block][j // cols_block])))
-        # moves.append((i, j, vals)) can be sets of possible values for the cell
         if len(vals) == 1:
             one_value.append((i, j, vals[0]))
+
+    # if there are one_value moves, put them on the board and return from the function combined with the moves for the new board
     if len(one_value) != 0:
         newboard = copy.deepcopy(board)
         for move in one_value:
             newboard.put(*move)
         return one_value + find_available_moves(newboard, taboolist)
+
+    # there are no one_value moves, so return all the moves 
     moves = []
     for (i, j) in empty_cells:
         vals = list(all_values.difference(rows[i].union(columns[j]).union(
             blocks[i // rows_block][j // cols_block])))
-        # moves.append((i, j, vals)) can be sets of possible values for the cell
         for val in vals:
             if (i, j, val) not in taboolist:
                 moves.append((i, j, val))
     return moves
 
 
-# def find_available_moves(board, taboolist):
-#     # find the available moves for the board
-#     rows_block = board.m
-#     cols_block = board.n
-#     board_size = rows_block * cols_block
-#     board = np.array(board.squares).reshape(
-#         (board.n * board.m, board.n * board.m))
-
-#     #creating the sets of possible values for rows, columns and blocks
-#     lines = [set(line) - {0} for line in board]
-#     rows = [set(row) - {0} for row in board.T]
-#     blocks = [[set(board[i * rows_block:(i + 1) * rows_block, j * cols_block:(j + 1)
-#                             * cols_block].reshape(-1)) - {0} for j in range(rows_block)] for i in range(cols_block)]
-
-#     # finding the possible values for the empty sells by using sets
-#     all_values = {i + 1 for i in range(board_size)}
-#     moves = []
-#     result = np.where(board == 0)
-#     empty_cells = list(zip(result[0], result[1]))
-#     for (i, j) in empty_cells:
-#         vals = all_values.difference(lines[i].union(rows[j]).union(
-#             blocks[i // rows_block][j // cols_block]))
-#         for val in vals:
-#             if (i, j, val) not in taboolist:
-#                 moves.append((i, j, val))
-#     return moves
-
-
 def all_moves(board, taboolist):
-    # find the available moves for the board
+    # find all the moves that don't violate the current board state
     rows_block = board.m
     cols_block = board.n
     board_size = rows_block * cols_block
@@ -111,7 +86,7 @@ def all_moves(board, taboolist):
     blocks = [[set(board[i * rows_block:(i + 1) * rows_block, j * cols_block:(j + 1)
                          * cols_block].reshape(-1)) - {0} for j in range(rows_block)] for i in range(cols_block)]
 
-    # finding the possible values for the empty sells by using sets
+    # finding the possible values for the empty cells by using sets
     all_values = {i + 1 for i in range(board_size)}
     moves = []
     result = np.where(board == 0)
@@ -126,6 +101,7 @@ def all_moves(board, taboolist):
 
 
 def minimax_alphabeta(depth, board, is_max, taboo, alpha, beta, score1=0, score2=0):
+    # minimax alpha-beta recursion algorithm 
     if depth == 0:
         return score1 - score2
     if 0 not in board.squares:
@@ -172,13 +148,24 @@ class SudokuAI(competitive_sudoku.sudokuai.SudokuAI):
         taboo = [(taboo_move.i, taboo_move.j, taboo_move.value)
                  for taboo_move in game_state.taboo_moves]
         satisfy = find_available_moves(board, taboo)
+
+        # finding the moves which will lead to passing the move
         fake_moves = set(all_moves(board, taboo)).difference(set(satisfy))
+
         empty_cells = board.squares.count(0)
         max_score = -1000
         depth = 2
         best_move_depth = 2
 
+        #proposing at least some move so we don't lose not providing any 
+        self.propose_move(
+                        Move(satisfy[0][0], satisfy[0][1], satisfy[0][2]))
+
+        # iteratively increasing the depth until the algorithm reaches the end of the game depth
+        # depth == 2 is for case when there's only one empty cell 
         while depth == 2 or depth <= empty_cells:
+
+            # if possible, calculate the value of passing the first move
             fake_move_made = False
             if fake_moves:
                 current_score = minimax_alphabeta(
@@ -198,6 +185,10 @@ class SudokuAI(competitive_sudoku.sudokuai.SudokuAI):
                 score = calculate_score(move[0], move[1], newboard)
                 current_score = minimax_alphabeta(
                     depth - 1, newboard, False, taboo, -10000, 10000, score, 0)
+
+                # we make a change to the proposed move having the same current_score as max_score if:
+                # 1) we are looking at the higher depth now 
+                # 2) the proposed move is a fake one. but we still want to make a fake move if there's an even number of empty cells
                 if max_score < current_score or ((best_move_depth < depth or (fake_move_made and not empty_cells % 2 == 0)) and max_score == current_score):
                     fake_move_made = False
                     best_move_depth = depth
