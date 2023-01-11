@@ -89,7 +89,7 @@ class treeNode():
         self.children = []
     
     def best_move(self):
-        # function for returning the best move based on the tree
+        # function for returning the best move based on the tree and the corresponding child
         max_move = None 
         max_value = -10000
         for child in self.children:
@@ -98,8 +98,8 @@ class treeNode():
             value = child.q / child.n
             if value > max_value:
                 max_value = value
-                max_move = child.move
-        return max_move
+                max_move = child
+        return max_move.move, max_move
 
     def update_node(self, delta):
         #updating the node's n (number of times visited) and q (the "value" of the node)
@@ -128,7 +128,7 @@ class treeNode():
                 if child.n == 0:
                     maxNode = child
                     break
-                curValue = child.q / child.n + 2 * math.sqrt(math.log(self.n) / child.n)
+                curValue = child.q / child.n + 0.1 * math.sqrt(math.log(self.n) / child.n)
                 if curValue > maxValue:
                     maxValue = curValue
                     maxNode = child
@@ -165,8 +165,8 @@ class treeNode():
                     new_board.put(*move)
                     self.children.append(treeNode(new_board, self.taboo_moves, 
                                         move,
-                                        self.score + calculate_score(move[0], move[1], new_board), 
-                                        self.player * -1))
+                                        score=self.score + self.player * calculate_score(move[0], move[1], new_board), 
+                                        player=-self.player))
                 delta = self.children[0].explore()
                 self.update_node(delta)
                 return delta
@@ -182,7 +182,7 @@ class SudokuAI(competitive_sudoku.sudokuai.SudokuAI):
     def __init__(self):
         super().__init__()
 
-    # N.B. This is a very naive implementation.
+
     def compute_best_move(self, game_state: GameState) -> None:
         board = copy.deepcopy(game_state.board)
         taboo = [(taboo_move.i, taboo_move.j, taboo_move.value)
@@ -193,14 +193,25 @@ class SudokuAI(competitive_sudoku.sudokuai.SudokuAI):
         self.propose_move(
                         Move(satisfy[0][0], satisfy[0][1], satisfy[0][2]))
 
+        # mc_tree = self.load()
+        # if mc_tree:
+        #     for child in mc_tree.children:
+        #         if child.board.squares == game_state.board.squares:
+        #             mc_tree = child 
+        #             mc_tree.taboo_moves = taboo
+        #             break
+        #     mc_tree = None
+        # if not mc_tree:
+        #     mc_tree = treeNode(board, taboo)
 
         mc_tree = treeNode(board, taboo)
-        mc_runs = 0
-
         propose_freq = 10
+        mc_runs = 0
         while True:
             mc_tree.explore()
             mc_runs += 1
             if mc_runs % propose_freq == 0:
-                self.propose_move(Move(*mc_tree.best_move()))
+                move, subtree = mc_tree.best_move()
+                # self.save(subtree)
+                self.propose_move(Move(*move))
 
