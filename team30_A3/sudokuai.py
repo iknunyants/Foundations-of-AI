@@ -93,9 +93,11 @@ class treeNode():
         max_move = None 
         max_value = -10000
         for child in self.children:
+            # print(child.move)
             if child.n == 0:
                 continue
             value = child.q / child.n
+            # print(value)
             if value > max_value:
                 max_value = value
                 max_move = child
@@ -104,8 +106,8 @@ class treeNode():
     def update_node(self, delta):
         #updating the node's n (number of times visited) and q (the "value" of the node)
         self.n += 1
-        if self.player * delta > 0:
-            self.q += 1 
+        if delta > 0:
+            self.q += -self.player
         return 
 
 
@@ -128,7 +130,7 @@ class treeNode():
                 if child.n == 0:
                     maxNode = child
                     break
-                curValue = child.q / child.n + 0.1 * math.sqrt(math.log(self.n) / child.n)
+                curValue = child.q / child.n + 2 * math.sqrt(math.log(self.n) / child.n)
                 if curValue > maxValue:
                     maxValue = curValue
                     maxNode = child
@@ -136,10 +138,9 @@ class treeNode():
             self.update_node(delta)
             return delta
         else:
-            def random_simulate(board, taboo_moves, player):
+            def random_simulate(board, taboo_moves, player, score):
                 # function for "simulation" stage
                 new_board = copy.deepcopy(board)
-                score = 0
                 while 0 in new_board.squares:
                     moves = find_available_moves(new_board,taboo_moves)
                     if len(moves) == 0:
@@ -153,7 +154,7 @@ class treeNode():
 
             if self.n == 0:
                 #this leaf has never been visited, "simulation" stage starts
-                delta = random_simulate(self.board, self.taboo_moves, self.player)
+                delta = random_simulate(self.board, self.taboo_moves, self.player, self.score)
                 self.update_node(delta)
                 return delta
             else:
