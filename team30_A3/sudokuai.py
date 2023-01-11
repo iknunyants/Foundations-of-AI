@@ -192,6 +192,9 @@ class SudokuAI(competitive_sudoku.sudokuai.SudokuAI):
         self.propose_move(
                         Move(satisfy[0][0], satisfy[0][1], satisfy[0][2]))
 
+        current_score = game_state.scores[self.player_number - 1] - game_state.scores[2 - self.player_number]
+
+        # uncomment the part for saving
         # mc_tree = self.load()
         # if mc_tree:
         #     for child in mc_tree.children:
@@ -201,16 +204,16 @@ class SudokuAI(competitive_sudoku.sudokuai.SudokuAI):
         #             break
         #     mc_tree = None
         # if not mc_tree:
-        #     mc_tree = treeNode(board, taboo)
-        current_score = game_state.scores[self.player_number - 1] - game_state.scores[2 - self.player_number]
-        mc_tree = treeNode(board, taboo, score=current_score)
-        propose_freq = 100
+        #     mc_tree = treeNode(board, taboo, current_score)
+
+        mc_tree = treeNode(board, taboo, score=current_score) # comment for saving
+        propose_freq = 10
         mc_runs = 0
         while True:
             mc_tree.explore()
             mc_runs += 1
             if mc_runs % propose_freq == 0:
                 move, subtree = mc_tree.best_move()
-                # self.save(subtree)
+                # self.save(subtree) # uncomment for saving
                 self.propose_move(Move(*move))
 

@@ -210,52 +210,14 @@ if __name__ == '__main__':
 
     first_player_name = 'team30_A3'
 
-    # f = open("output3b.txt", "w")
-    
-    # board_names = ['boards/empty-3x3.txt']
-    
-    # second_players  = ['team30_A1']
-    
-    # times = [0.1, 0.5, 1.0]
 
-    # print_games = False
-
-    # run_experiment_times = 10
-
-    # for second_player_name in second_players:
-    #     for time_param in times:
-    #         for board_name in board_names:
-    #             run_experiment(first_player_name, second_player_name,
-    #                            time_param, board_name, run_experiment_times, f, print_games)
-
-
-    # board_names = ['boards/empty-3x3.txt', 'boards/random-3x4.txt', 'boards/random-4x4.txt']
-    
-    # second_players  = ['team30_A1']
-    
-    # times = [5.0]
-
-    # print_games = False
-
-    # run_experiment_times = 10
-
-    # for second_player_name in second_players:
-    #     for time_param in times:
-    #         for board_name in board_names:
-    #             run_experiment(first_player_name, second_player_name,
-    #                            time_param, board_name, run_experiment_times, f, print_games)
-
-    # f.close()
-    
-
-
-    f = open("output.txt", "w")
+    f = open("output_v2.txt", "w")
 
     second_players  = ['greedy_player', 'team30_A2']
 
     times = [0.1, 0.5, 1.0, 5.0]
 
-    board_names = ['boards/empty-3x3.txt', 'boards/easy-2x2.txt', 'boards/easy-3x3.txt', 
+    board_names = ['boards/easy-2x2.txt', 'boards/easy-3x3.txt', 
     'boards/hard-3x3.txt', 'boards/random-2x3.txt', 'boards/random-3x3.txt', 'boards/random-3x4.txt', 'boards/random-4x4.txt']
 
     print_games = False
@@ -271,23 +233,3 @@ if __name__ == '__main__':
 
     f.close()
 
-    # f = open("output1.txt", "w")
-
-    # second_players  = ['greedy_player']
-
-    # times = [1000.0]
-
-    # board_names = ['boards/easy-2x2.txt', 'boards/easy-3x3.txt', 
-    # 'boards/hard-3x3.txt', 'boards/random-2x3.txt', 'boards/random-3x3.txt', 'boards/random-3x4.txt', 'boards/random-4x4.txt']
-
-    # print_games = False
-
-    # run_experiment_times = 10
-
-    # for time_param in times:
-    #     for second_player_name in second_players:
-    #         for board_name in board_names:
-    #             run_experiment(first_player_name, second_player_name,
-    #                            time_param, board_name, run_experiment_times, f, print_games)
-
-    # f.close()
