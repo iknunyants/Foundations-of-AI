@@ -93,11 +93,9 @@ class treeNode():
         max_move = None 
         max_value = -10000
         for child in self.children:
-            # print(child.move)
             if child.n == 0:
                 continue
             value = child.q / child.n
-            # print(value)
             if value > max_value:
                 max_value = value
                 max_move = child
@@ -204,9 +202,9 @@ class SudokuAI(competitive_sudoku.sudokuai.SudokuAI):
         #     mc_tree = None
         # if not mc_tree:
         #     mc_tree = treeNode(board, taboo)
-
-        mc_tree = treeNode(board, taboo)
-        propose_freq = 10
+        current_score = game_state.scores[self.player_number - 1] - game_state.scores[2 - self.player_number]
+        mc_tree = treeNode(board, taboo, score=current_score)
+        propose_freq = 100
         mc_runs = 0
         while True:
             mc_tree.explore()
